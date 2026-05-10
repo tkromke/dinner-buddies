@@ -1,11 +1,10 @@
 """Agent orchestration.
 
-Slice 3: real time math.
-- Compute Chloe's MRT arrival from her commute
-- Decide dine-in vs takeout from arrival time + mood
-- Per-place leave_home_time using the SPEC's rules
-Picks are still hardcoded; real candidate filtering arrives in Slice 4
-and Claude reasoning in Slice 5.
+Slice 4a:
+- Real time math (Slice 3 carryover)
+- Mode decision with full dinner-window logic (Slice 3.1 fix)
+- Candidate filtering via places.get_candidates()
+- Picks first two candidates as top/backup; Claude reasoning lands in Slice 5
 """
 
 import logging
@@ -13,6 +12,7 @@ from datetime import datetime, time as dtime, timedelta
 
 import config
 import maps
+import places
 
 logger = logging.getLogger(__name__)
 
@@ -24,22 +24,6 @@ def _parse_clock(s: str) -> dtime:
 
 def _fmt(dt: datetime) -> str:
     return dt.strftime("%H:%M")
-
-
-def _compute_leave_home(
-    arrival: datetime, walk_minutes: int, mode: str, place_name: str,
-) -> datetime:
-    """Tobi's leave-home time for a specific candidate place."""
-    is_sun_plaza = "Sun Plaza" in place_name
-
-    if mode == "dine-in" or is_sun_plaza:
-        return arrival - timedelta(minutes=config.TOBI_WALK_TO_MRT_MIN)
-
-    tobi_total = (2 * walk_minutes) + config.BUYING_TIME_MIN
-    return max(
-        arrival - timedelta(minutes=tobi_total),
-        arrival - timedelta(minutes=config.MIN_TOBI_LEAD_TIME_MIN),
-    )
 
 
 def _decide_mode(arrival: datetime, mood: str | None) -> str:
@@ -80,6 +64,21 @@ def _decide_mode(arrival: datetime, mood: str | None) -> str:
     return "takeout"
 
 
+def _candidate_to_pick(c: dict) -> dict:
+    """Shape a candidate dict into the top_pick/backup_pick schema.
+
+    Reasoning is the place's personal_notes verbatim until Slice 5
+    replaces this with Claude's output.
+    """
+    return {
+        "place_id": c["id"],
+        "name": c["name"],
+        "leave_home_time": c["leave_home_time"],
+        "for_user": None,
+        "reasoning": c.get("personal_notes") or "From curated list.",
+    }
+
+
 def plan(trigger_user: str, minutes_until_leaving: int, mood: str | None) -> dict:
     """Return a dinner plan dict matching prompts/dinner_agent.md."""
     now = datetime.now()
@@ -105,44 +104,54 @@ def plan(trigger_user: str, minutes_until_leaving: int, mood: str | None) -> dic
 
     mode = _decide_mode(arrival, mood)
 
-    # Hardcoded picks — real candidate filtering lands in Slice 4.
-    top_name = "White Restaurant (Sun Plaza)"
-    top_walk = 3
-    top_leave = _compute_leave_home(arrival, top_walk, mode, top_name)
-    logger.info("Tobi leave time for top pick (%s): %s", top_name, _fmt(top_leave))
+    candidates = places.get_candidates(
+        mood=mood,
+        arrival_time=arrival,
+        mode=mode,
+        chloe_arrival_at_mrt=arrival,
+    )
 
-    backup_name = "Saizeriya (Sun Plaza)"
-    backup_walk = 3
-    backup_leave = _compute_leave_home(arrival, backup_walk, mode, backup_name)
-    logger.info("Tobi leave time for backup pick (%s): %s", backup_name, _fmt(backup_leave))
-
-    return {
+    base = {
         "mode": mode,
         "meeting_point": "Sembawang MRT",
         "arrival_time": _fmt(arrival),
-        "top_pick": {
-            "place_id": "p002",
-            "name": top_name,
-            "leave_home_time": _fmt(top_leave),
-            "for_user": None,
-            "reasoning": (
-                "Personal note flags this as the healthy pick, "
-                "and closes at 21:30 so timing works."
+    }
+
+    if not candidates:
+        logger.warning("No candidates survived filtering — empty plan")
+        return {
+            **base,
+            "top_pick": None,
+            "backup_pick": None,
+            "summary_line": "No viable options for the constraints provided.",
+        }
+
+    top = _candidate_to_pick(candidates[0])
+    logger.info("Top pick: %s (leave_home=%s)", top["name"], top["leave_home_time"])
+
+    if len(candidates) < 2:
+        logger.warning("Only one candidate available — backup_pick is None")
+        return {
+            **base,
+            "top_pick": top,
+            "backup_pick": None,
+            "summary_line": (
+                f"Only one viable option: {top['name'].split('(')[0].strip()}. "
+                f"Meet at Sembawang MRT at {_fmt(arrival)}."
             ),
-        },
-        "backup_pick": {
-            "place_id": "p004",
-            "name": backup_name,
-            "leave_home_time": _fmt(backup_leave),
-            "for_user": None,
-            "reasoning": (
-                "Use this if undecided; arrival before peak so no table wait."
-            ),
-        },
+        }
+
+    backup = _candidate_to_pick(candidates[1])
+    logger.info("Backup pick: %s (leave_home=%s)", backup["name"], backup["leave_home_time"])
+
+    return {
+        **base,
+        "top_pick": top,
+        "backup_pick": backup,
         "summary_line": (
             f"Meet at Sembawang MRT at {_fmt(arrival)} — "
-            f"{top_name.split('(')[0].strip()}, "
-            f"{backup_name.split('(')[0].strip()} as backup. "
+            f"{top['name'].split('(')[0].strip()}, "
+            f"{backup['name'].split('(')[0].strip()} as backup. "
             f"(Triggered by {trigger_user}, leaving in {minutes_until_leaving}m"
             + (f", mood={mood}" if mood else "")
             + ".)"

@@ -49,8 +49,8 @@ def format_plan(plan_dict: dict) -> str:
     mode = plan_dict["mode"]
     meeting_point = plan_dict["meeting_point"]
     arrival_time = plan_dict["arrival_time"]
-    top = plan_dict["top_pick"]
-    backup = plan_dict["backup_pick"]
+    top = plan_dict.get("top_pick")
+    backup = plan_dict.get("backup_pick")
     summary = plan_dict["summary_line"]
 
     lines = [
@@ -58,16 +58,26 @@ def format_plan(plan_dict: dict) -> str:
         "",
         f"Meet at *{_md_escape(meeting_point)}* at *{_md_escape(arrival_time)}*",
         "",
-        f"*Top pick:* {_md_escape(top['name'])}",
-        f"  _Leave home: {_md_escape(top['leave_home_time'])}_",
-        f"  {_md_escape(top['reasoning'])}",
-        "",
-        f"*Backup:* {_md_escape(backup['name'])}",
-        f"  _Leave home: {_md_escape(backup['leave_home_time'])}_",
-        f"  {_md_escape(backup['reasoning'])}",
-        "",
-        f"_{_md_escape(summary)}_",
     ]
+
+    if top:
+        lines += [
+            f"*Top pick:* {_md_escape(top['name'])}",
+            f"  _Leave home: {_md_escape(top['leave_home_time'])}_",
+            f"  {_md_escape(top['reasoning'])}",
+            "",
+        ]
+    if backup:
+        lines += [
+            f"*Backup:* {_md_escape(backup['name'])}",
+            f"  _Leave home: {_md_escape(backup['leave_home_time'])}_",
+            f"  {_md_escape(backup['reasoning'])}",
+            "",
+        ]
+    elif top:
+        lines += ["_(No backup available — only one viable option.)_", ""]
+
+    lines.append(f"_{_md_escape(summary)}_")
     return "\n".join(lines)
 
 
