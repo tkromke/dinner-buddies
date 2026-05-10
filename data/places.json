@@ -1,0 +1,125 @@
+{
+  "places": [
+    {
+      "id": "p001",
+      "name": "Men Men Don Don (Sun Plaza)",
+      "cuisine": "japanese",
+      "mood_tags": ["asian", "japanese", "soupy", "comfort", "sit-down"],
+      "walk_minutes_from_mrt": 3,
+      "typical_closing": "20:30",
+      "price_range": "$$",
+      "personal_notes": "Works if you crave Japanese comfort food and we have enough time.",
+      "last_eaten": null
+    },
+    {
+      "id": "p002",
+      "name": "White Restaurant (Sun Plaza)",
+      "cuisine": "chinese",
+      "mood_tags": ["asian", "chinese", "healthy", "sit-down"],
+      "walk_minutes_from_mrt": 3,
+      "typical_closing": "21:30",
+      "price_range": "$$",
+      "personal_notes": "Choose this if you feel like you should eat something healthy.",
+      "last_eaten": null
+    },
+    {
+      "id": "p003",
+      "name": "Nan Yang Dao (Sun Plaza)",
+      "cuisine": "chinese",
+      "mood_tags": ["asian", "chinese", "healthy", "sit-down"],
+      "walk_minutes_from_mrt": 3,
+      "typical_closing": "22:00",
+      "price_range": "$$",
+      "personal_notes": "Good place when we don't feel like eating Japanese, Western, or Chinese-style heavy and want to sit down.",
+      "last_eaten": null
+    },
+    {
+      "id": "p004",
+      "name": "Saizeriya (Sun Plaza)",
+      "cuisine": "western",
+      "mood_tags": ["western", "comfort", "sit-down"],
+      "walk_minutes_from_mrt": 3,
+      "typical_closing": "22:00",
+      "price_range": "$$",
+      "personal_notes": "Use this if you don't know what to eat. Does not work if you feel very hungry, you'll need to wait for a table.",
+      "last_eaten": null
+    },
+    {
+      "id": "p005",
+      "name": "Sushi Express (Sun Plaza)",
+      "cuisine": "japanese",
+      "mood_tags": ["asian", "japanese", "healthy", "sit-down"],
+      "walk_minutes_from_mrt": 3,
+      "typical_closing": "21:30",
+      "price_range": "$$",
+      "personal_notes": "Great recommendation if you are unsure what to eat. Does not work if you want hot food. Don't take this around 19:00, you'll wait for a seat.",
+      "last_eaten": null
+    },
+    {
+      "id": "p006",
+      "name": "Fusion Western Cuisine (361 Coffee Shop)",
+      "cuisine": "western",
+      "mood_tags": ["western", "indulgent", "takeout"],
+      "walk_minutes_from_mrt": 15,
+      "typical_closing": "21:30",
+      "price_range": "$",
+      "personal_notes": "Works if there are work calls later at night. Does not work if Tobi has to work late. Takeout only.",
+      "last_eaten": null
+    },
+    {
+      "id": "p007",
+      "name": "D'Rubinah (Sembawang Drive)",
+      "cuisine": "malay",
+      "mood_tags": ["malay", "indulgent", "takeout", "sit-down", "late-night"],
+      "walk_minutes_from_mrt": 20,
+      "typical_closing": "23:59",
+      "price_range": "$",
+      "personal_notes": "Works if we eat very late. Does not work if we don't feel like walking far.",
+      "last_eaten": null
+    },
+    {
+      "id": "p008",
+      "name": "Wingstop (Sembawang Shopping Centre)",
+      "cuisine": "western",
+      "mood_tags": ["western", "indulgent", "takeout"],
+      "walk_minutes_from_mrt": 20,
+      "typical_closing": "22:00",
+      "price_range": "$$",
+      "personal_notes": "Only works if the next day is not a working day.",
+      "last_eaten": null
+    },
+    {
+      "id": "p009",
+      "name": "Lele Wanton Noodles (313 Coffee Shop)",
+      "cuisine": "chinese",
+      "mood_tags": ["asian", "chinese", "soupy", "quick", "sit-down"],
+      "walk_minutes_from_mrt": 10,
+      "typical_closing": "20:30",
+      "price_range": "$",
+      "personal_notes": "Works if we just want to grab something. Works if we want to drop our stuff at home first. Does not work if we eat late.",
+      "last_eaten": null
+    },
+    {
+      "id": "p010",
+      "name": "Gong Yuan Ma La Tang (Sun Plaza)",
+      "cuisine": "chinese",
+      "mood_tags": ["asian", "chinese", "soupy", "sit-down", "takeout"],
+      "walk_minutes_from_mrt": 3,
+      "typical_closing": "21:30",
+      "price_range": "$$",
+      "personal_notes": "Works if we want something soupy. Pairs well with Tobi grabbing Dabba Street takeout while Chloe takes the Ma La Tang.",
+      "last_eaten": null
+    },
+    {
+      "id": "p011",
+      "name": "Dabba Street (Sun Plaza)",
+      "cuisine": "indian",
+      "mood_tags": ["indian", "takeout"],
+      "walk_minutes_from_mrt": 3,
+      "typical_closing": "21:30",
+      "price_range": "$-$$",
+      "personal_notes": "Works as a takeout pairing for Tobi when Chloe is craving Ma La Tang.",
+      "last_eaten": null
+    }
+  ]
+}
