@@ -61,5 +61,8 @@ VALID_MOOD_TAGS = {
     "quick", "takeout", "late-night",
 }
 
-# --- Claude model ---
+# --- Claude ---
 CLAUDE_MODEL = "claude-sonnet-4-5"
+# Toggle to False to bypass the API and use the deterministic fallback
+# (first two candidates with a "fallback" reasoning string).
+USE_CLAUDE = True

@@ -1,15 +1,16 @@
 """Agent orchestration.
 
-Slice 4a:
-- Real time math (Slice 3 carryover)
+Slice 5:
+- Real time math (Slice 3)
 - Mode decision with full dinner-window logic (Slice 3.1 fix)
-- Candidate filtering via places.get_candidates()
-- Picks first two candidates as top/backup; Claude reasoning lands in Slice 5
+- Curated candidate filtering (Slice 4a)
+- Claude reasoning via claude_brain.decide() with shape validation
 """
 
 import logging
 from datetime import datetime, time as dtime, timedelta
 
+import claude_brain
 import config
 import maps
 import places
@@ -64,19 +65,57 @@ def _decide_mode(arrival: datetime, mood: str | None) -> str:
     return "takeout"
 
 
-def _candidate_to_pick(c: dict) -> dict:
-    """Shape a candidate dict into the top_pick/backup_pick schema.
-
-    Reasoning is the place's personal_notes verbatim until Slice 5
-    replaces this with Claude's output.
-    """
+def _build_context(
+    mode: str,
+    trigger_user: str,
+    now: datetime,
+    arrival: datetime,
+    mood: str | None,
+    candidates: list[dict],
+) -> dict:
+    """Shape the context object exactly as prompts/dinner_agent.md expects."""
     return {
-        "place_id": c["id"],
-        "name": c["name"],
-        "leave_home_time": c["leave_home_time"],
-        "for_user": None,
-        "reasoning": c.get("personal_notes") or "From curated list.",
+        "mode": mode,
+        "trigger_user": trigger_user,
+        "current_time": _fmt(now),
+        "chloe_arrival_at_mrt": _fmt(arrival),
+        "mood_tag": mood,
+        "candidates": [
+            {
+                "place_id": c["id"],
+                "name": c["name"],
+                "cuisine": c["cuisine"],
+                "mood_tags": c["mood_tags"],
+                "walk_minutes_from_mrt": c["walk_minutes_from_mrt"],
+                "typical_closing": c["typical_closing"],
+                "price_range": c["price_range"],
+                "personal_notes": c["personal_notes"],
+                "last_eaten": c["last_eaten"],
+                "source": c["source"],
+                "leave_home_time": c["leave_home_time"],
+            }
+            for c in candidates
+        ],
     }
+
+
+def _validate_plan_shape(plan_dict) -> bool:
+    if not isinstance(plan_dict, dict):
+        return False
+    required = {"mode", "meeting_point", "arrival_time",
+                "top_pick", "backup_pick", "summary_line"}
+    if not required.issubset(plan_dict.keys()):
+        return False
+    for key in ("top_pick", "backup_pick"):
+        pick = plan_dict[key]
+        if pick is None:
+            continue
+        if not isinstance(pick, dict):
+            return False
+        pick_required = {"place_id", "name", "leave_home_time", "reasoning"}
+        if not pick_required.issubset(pick.keys()):
+            return False
+    return True
 
 
 def plan(trigger_user: str, minutes_until_leaving: int, mood: str | None) -> dict:
@@ -111,49 +150,25 @@ def plan(trigger_user: str, minutes_until_leaving: int, mood: str | None) -> dic
         chloe_arrival_at_mrt=arrival,
     )
 
-    base = {
-        "mode": mode,
-        "meeting_point": "Sembawang MRT",
-        "arrival_time": _fmt(arrival),
-    }
+    context = _build_context(
+        mode=mode,
+        trigger_user=trigger_user,
+        now=now,
+        arrival=arrival,
+        mood=mood,
+        candidates=candidates,
+    )
+    logger.info("Sending %d candidates to Claude", len(candidates))
 
-    if not candidates:
-        logger.warning("No candidates survived filtering — empty plan")
-        return {
-            **base,
-            "top_pick": None,
-            "backup_pick": None,
-            "summary_line": "No viable options for the constraints provided.",
-        }
+    plan_dict = claude_brain.decide(context)
 
-    top = _candidate_to_pick(candidates[0])
-    logger.info("Top pick: %s (leave_home=%s)", top["name"], top["leave_home_time"])
+    if not _validate_plan_shape(plan_dict):
+        logger.warning(
+            "Plan shape validation failed; falling back. Bad shape: %r",
+            plan_dict,
+        )
+        plan_dict = claude_brain.fallback_plan(
+            context, "shape validation failed"
+        )
 
-    if len(candidates) < 2:
-        logger.warning("Only one candidate available — backup_pick is None")
-        return {
-            **base,
-            "top_pick": top,
-            "backup_pick": None,
-            "summary_line": (
-                f"Only one viable option: {top['name'].split('(')[0].strip()}. "
-                f"Meet at Sembawang MRT at {_fmt(arrival)}."
-            ),
-        }
-
-    backup = _candidate_to_pick(candidates[1])
-    logger.info("Backup pick: %s (leave_home=%s)", backup["name"], backup["leave_home_time"])
-
-    return {
-        **base,
-        "top_pick": top,
-        "backup_pick": backup,
-        "summary_line": (
-            f"Meet at Sembawang MRT at {_fmt(arrival)} — "
-            f"{top['name'].split('(')[0].strip()}, "
-            f"{backup['name'].split('(')[0].strip()} as backup. "
-            f"(Triggered by {trigger_user}, leaving in {minutes_until_leaving}m"
-            + (f", mood={mood}" if mood else "")
-            + ".)"
-        ),
-    }
+    return plan_dict
