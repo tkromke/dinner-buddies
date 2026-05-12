@@ -118,9 +118,34 @@ def _validate_plan_shape(plan_dict) -> bool:
     return True
 
 
-def plan(trigger_user: str, minutes_until_leaving: int, mood: str | None) -> dict:
-    """Return a dinner plan dict matching prompts/dinner_agent.md."""
-    now = datetime.now()
+def plan(
+    trigger_user: str,
+    minutes_until_leaving: int,
+    mood: str | None,
+    simulated_now: datetime | None = None,
+    force_mode: str | None = None,
+    exclude_place_ids: list[str] | None = None,
+    office_buffer_override: int | None = None,
+) -> dict:
+    """Return a dinner plan dict matching prompts/dinner_agent.md.
+
+    Args:
+        force_mode: if set ("dine-in" or "takeout"), bypass _decide_mode
+            and use this. Powers the "Switch mode" button.
+        exclude_place_ids: place ids to filter out before ranking. Powers
+            the "Show alternatives" button.
+        office_buffer_override: if set (including 0), use this in place
+            of config.CHLOE_OFFICE_BUFFER_MIN. Powers the "Departure
+            confirmed" button (tap → buffer=0, tightening arrival).
+
+    `simulated_now` (if set) replaces datetime.now() for all time math.
+    Maps/Claude APIs and log timestamps stay on real clock.
+    """
+    now = simulated_now if simulated_now is not None else datetime.now()
+    if simulated_now is not None:
+        logger.info(
+            "agent.plan running with simulated_now=%s", _fmt(simulated_now),
+        )
     chloe_departure = now + timedelta(minutes=minutes_until_leaving)
 
     commute_min = maps.get_commute_minutes(
@@ -129,25 +154,33 @@ def plan(trigger_user: str, minutes_until_leaving: int, mood: str | None) -> dic
         departure_time=chloe_departure,
     )
 
+    buffer_min = (
+        office_buffer_override
+        if office_buffer_override is not None
+        else config.CHLOE_OFFICE_BUFFER_MIN
+    )
     arrival = now + timedelta(
-        minutes=(
-            minutes_until_leaving
-            + commute_min
-            + config.CHLOE_OFFICE_BUFFER_MIN
-        )
+        minutes=(minutes_until_leaving + commute_min + buffer_min)
     )
     logger.info(
-        "Chloe leaving in %d → office commute %d min + %d buffer → arrival %s",
-        minutes_until_leaving, commute_min, config.CHLOE_OFFICE_BUFFER_MIN, _fmt(arrival),
+        "Chloe leaving in %d → office commute %d min + %d buffer%s → arrival %s",
+        minutes_until_leaving, commute_min, buffer_min,
+        " (override)" if office_buffer_override is not None else "",
+        _fmt(arrival),
     )
 
-    mode = _decide_mode(arrival, mood)
+    if force_mode is not None:
+        mode = force_mode
+        logger.info("Mode: %s (forced via force_mode override)", mode)
+    else:
+        mode = _decide_mode(arrival, mood)
 
     candidates = places.get_candidates(
         mood=mood,
         arrival_time=arrival,
         mode=mode,
         chloe_arrival_at_mrt=arrival,
+        exclude_place_ids=exclude_place_ids,
     )
 
     context = _build_context(
@@ -170,5 +203,8 @@ def plan(trigger_user: str, minutes_until_leaving: int, mood: str | None) -> dic
         plan_dict = claude_brain.fallback_plan(
             context, "shape validation failed"
         )
+
+    if simulated_now is not None:
+        plan_dict["_test_simulated_now"] = _fmt(simulated_now)
 
     return plan_dict

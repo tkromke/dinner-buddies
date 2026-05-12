@@ -89,10 +89,18 @@ def get_candidates(
     arrival_time: datetime,
     mode: str,
     chloe_arrival_at_mrt: datetime,
+    exclude_place_ids: list[str] | None = None,
 ) -> list[dict]:
     """Filter curated places and attach source + leave_home_time."""
     places = load_curated_places()
     n_loaded = len(places)
+
+    exclude = set(exclude_place_ids or [])
+    if exclude:
+        places = [p for p in places if p["id"] not in exclude]
+        logger.info(
+            "Excluding %d already-shown place ids: %s", len(exclude), sorted(exclude),
+        )
 
     after_mode = [p for p in places if _passes_mode(p, mode)]
     n_mode = len(after_mode)

@@ -1,4 +1,4 @@
-# Dinner Agent — Build Spec
+# Dinner Agent: Build Spec
 
 ## What we're building
 
@@ -89,17 +89,17 @@ project/
 ## External dependencies
 
 APIs:
-- Anthropic Claude API (model: claude-sonnet-4-5 or latest sonnet) — agent reasoning
-- Google Places API (Nearby Search + Place Details) — restaurant candidates fallback
-- Google Distance Matrix API — commute times
-- Telegram Bot API — interface
+- Anthropic Claude API (model: claude-sonnet-4-5 or latest sonnet): agent reasoning
+- Google Places API (Nearby Search + Place Details): restaurant candidates fallback
+- Google Distance Matrix API: commute times
+- Telegram Bot API: interface
 
 Python libraries:
-- `python-telegram-bot` — Telegram interface
-- `anthropic` — Claude SDK
-- `googlemaps` — Google Maps SDK (covers Places + Distance Matrix)
-- `python-dotenv` — env var management
-- `pydantic` — structured outputs from Claude
+- `python-telegram-bot`: Telegram interface
+- `anthropic`: Claude SDK
+- `googlemaps`: Google Maps SDK (covers Places + Distance Matrix)
+- `python-dotenv`: env var management
+- `pydantic`: structured outputs from Claude
 
 Environment variables (in `.env`):
 - `TELEGRAM_BOT_TOKEN`
