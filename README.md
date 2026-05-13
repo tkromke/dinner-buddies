@@ -77,6 +77,13 @@ python3 bot.py
 | `TOBIAS_TELEGRAM_USER_ID` | @userinfobot on Telegram |
 | `CHLOE_TELEGRAM_USER_ID` | @userinfobot on Telegram |
 
+## Running it yourself
+
+The bot runs locally with your own API keys, set in `.env`. The video
+walkthrough demonstrates the agent end-to-end with real API calls. The
+repo contains everything needed to run it in your environment, see Setup
+above.
+
 ## Usage
 
 Command syntax:
