@@ -112,40 +112,43 @@ Input:
 Bot response:
 
 ```
-Dinner Plan, dine-in mode
+Dinner Plan — dine-in
 Meet at Sembawang MRT at 19:11
 
 Top pick: Saizeriya (Sun Plaza)
    Leave home: 19:06
-   Personal note flags this as the safe pick when undecided, closes
-   at 22:00 so timing works.
+   Personal note flags this as the safe pick when undecided, closes at 22:00.
 
-Backup: Gong Yuan Ma La Tang (Sun Plaza)
+Backup: Nan Yang Dao (Sun Plaza)
    Leave home: 19:06
-   Soupy 3-min walk option, different cuisine from the top pick for
-   a real choice.
+   Good when wanting to avoid Japanese or Western, closes at 22:00 with room.
 
-[Switch Mode]  [Show Alternatives]  [Chloe left the office]
+Western comfort at Saizeriya or healthy Chinese at Nan Yang Dao, both close by.
+
+🧪 Test mode: simulated time 18:00
+
+[Chloe left the office]
+[Show Alternatives]    [Switch Mode]    
 ```
 
 Terminal logs during the call:
 
 ```
-2026-05-11 23:37:14,779 - __main__ - INFO - TEST MODE: using simulated current_time=18:00 (real time=23:37)
-2026-05-11 23:37:14,779 - __main__ - INFO - /dinner received: user=tobi (id=473918575) minutes=15 mood=None test_mode=True
-2026-05-11 23:37:14,779 - agent - INFO - agent.plan running with simulated_now=18:00
-2026-05-11 23:37:14,957 - maps - INFO - Distance Matrix: origin={'lat': 1.2802463624652376, 'lng': 103.84940459657376} dest={'lat': 1.4490799407756672, 'lng': 103.81989078803986} -> 2747 sec (46 min)
-2026-05-11 23:37:14,957 - agent - INFO - Chloe leaving in 15, office commute 46 min + 10 buffer, arrival 19:11
-2026-05-11 23:37:14,957 - agent - INFO - Mode decision: arrival=19:11, dinner_window=17:00-19:30, in_window=True, dine-in
-2026-05-11 23:37:14,959 - places - INFO - Loaded 11 curated places from /Users/tkromke_privat/Documents/GitHub/Dinner Buddies/data/places.json
-2026-05-11 23:37:14,959 - places - INFO - Curated: 11 places, 8 after mode filter, 8 after closing-time filter, 8 after mood filter
-2026-05-11 23:37:14,960 - agent - INFO - Sending 8 candidates to Claude
-2026-05-11 23:37:14,972 - claude_brain - INFO - Loaded system prompt: 5134 chars
-2026-05-11 23:37:19,874 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-2026-05-11 23:37:19,914 - claude_brain - INFO - Claude API call: 4.94s, model=claude-sonnet-4-5, tokens_in=2967, tokens_out=264
-2026-05-11 23:37:19,914 - claude_brain - INFO - Claude returned plan: top=p004, backup=p010, mode=dine-in, reasoning_top='Personal note flags this as the safe pick when undecided, and closes at 22:00 so'
-2026-05-11 23:37:19,914 - __main__ - INFO - agent.plan returned mode=dine-in top=p004 backup=p010
-2026-05-11 23:37:19,914 - __main__ - INFO - Stored request state id=108fa86d826649f0 state={'trigger_user': 'tobi', 'minutes': 15, 'mood': None, 'simulated_now': datetime.datetime(2026, 5, 11, 18, 0), 'current_mode': 'dine-in', 'already_shown_ids': ['p004', 'p010'], 'office_buffer_override': None}
+2026-05-13 08:41:16,819 - __main__ - INFO - TEST MODE: using simulated current_time=18:00 (real time=08:41)
+2026-05-13 08:41:16,819 - __main__ - INFO - /dinner received: user=tobi (id=[USER_ID]) minutes=15 mood=None test_mode=True
+2026-05-13 08:41:16,819 - agent - INFO - agent.plan running with simulated_now=18:00
+2026-05-13 08:41:17,044 - maps - INFO - Distance Matrix: origin={'lat': 1.28, 'lng': 103.85} dest={'lat': 1.45, 'lng': 103.82} → 2747 sec (46 min)
+2026-05-13 08:41:17,045 - agent - INFO - Chloe leaving in 15 → office commute 46 min + 10 buffer → arrival 19:11
+2026-05-13 08:41:17,045 - agent - INFO - Mode decision: arrival=19:11, dinner_window=17:00-19:30, in_window=True → dine-in
+2026-05-13 08:41:17,046 - places - INFO - Loaded 11 curated places from data/places.json
+2026-05-13 08:41:17,047 - places - INFO - Curated: 11 places → 8 after mode filter → 8 after closing-time filter → 8 after mood filter
+2026-05-13 08:41:17,047 - agent - INFO - Sending 8 candidates to Claude
+2026-05-13 08:41:17,059 - claude_brain - INFO - Loaded system prompt: 5133 chars
+2026-05-13 08:41:21,649 - httpx - INFO - HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-05-13 08:41:21,707 - claude_brain - INFO - Claude API call: 4.65s, model=claude-sonnet-4-5, tokens_in=2967, tokens_out=250
+2026-05-13 08:41:21,707 - claude_brain - INFO - Claude returned plan: top=p004, backup=p003, mode=dine-in, reasoning_top='Personal note flags this as the safe pick when undecided, closes at 22:00.'
+2026-05-13 08:41:21,707 - __main__ - INFO - agent.plan returned mode=dine-in top=p004 backup=p003
+2026-05-13 08:41:22,259 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot[REDACTED_TG_TOKEN]/sendMessage "HTTP/1.1 200 OK"
 ```
 
 ## Mode determination
