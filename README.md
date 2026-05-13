@@ -110,6 +110,7 @@ Input:
 ```
 
 Bot response:
+![Telegram message][def]
 
 ```
 Dinner Plan — dine-in
@@ -220,3 +221,6 @@ upfront.
 - Mood filter falls back to "no filter" if zero candidates match (logged),
   which is a deliberate "show something rather than nothing" choice.
 - All times are local (SGT). No timezone handling.
+
+
+[def]: demo_assets/dinner_plan_dine_in.png
