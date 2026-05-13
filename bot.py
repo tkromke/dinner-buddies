@@ -30,8 +30,80 @@ import config
 
 # In-memory request-state store. Keyed by short request id; embedded in
 # button callback_data so each tap can look up the original plan params.
-# Cleared on bot restart — fine for the demo.
+# Cleared on bot restart, fine for the demo.
 _request_state: dict[str, dict] = {}
+
+
+# --- Log redaction ------------------------------------------------------
+
+class SecretRedactor(logging.Filter):
+    """Mask secrets and PII before any handler emits a record.
+
+    Attached to the root logger's handlers (not the loggers themselves)
+    so that records propagated from child loggers (httpx, telegram.ext,
+    agent, maps, places, claude_brain, __main__) are all filtered.
+
+    Replacements:
+      Telegram bot token in URLs (".../bot<TOKEN>/method")
+      Telegram bot token bare (NNNNNNNN:AA...)
+      Anthropic key (sk-ant-...)
+      Google Maps key (AIza...)
+      Telegram user/chat IDs (id=NNN, user_id=NNN, chat_id=NNN)
+      Configured Telegram user IDs anywhere they appear
+      Lat/lng coordinates rounded to 2 decimal places
+    """
+
+    _TOKEN_IN_URL = re.compile(r"bot\d{6,12}:[A-Za-z0-9_-]+")
+    _TG_TOKEN_BARE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{30,}\b")
+    _ANTHROPIC_KEY = re.compile(r"sk-ant-[A-Za-z0-9_-]+")
+    _GMAPS_KEY = re.compile(r"AIza[A-Za-z0-9_-]{20,}")
+    _USER_ID_FIELD = re.compile(r"\b(user_id|chat_id|id)=(\d{6,12})\b")
+    _COORD = re.compile(r"'(lat|lng)':\s*(-?\d+\.\d+)")
+
+    def __init__(self, user_ids: list[int] | None = None) -> None:
+        super().__init__()
+        self._user_ids = [str(uid) for uid in (user_ids or []) if uid]
+
+    @staticmethod
+    def _round_coord(match: "re.Match[str]") -> str:
+        key = match.group(1)
+        val = round(float(match.group(2)), 2)
+        return f"'{key}': {val}"
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            msg = record.getMessage()
+        except Exception:
+            return True
+
+        msg = self._TOKEN_IN_URL.sub("bot[REDACTED_TG_TOKEN]", msg)
+        msg = self._TG_TOKEN_BARE.sub("[REDACTED_TG_TOKEN]", msg)
+        msg = self._ANTHROPIC_KEY.sub("[REDACTED_ANTHROPIC_KEY]", msg)
+        msg = self._GMAPS_KEY.sub("[REDACTED_GMAPS_KEY]", msg)
+        msg = self._USER_ID_FIELD.sub(r"\1=[USER_ID]", msg)
+        msg = self._COORD.sub(self._round_coord, msg)
+
+        for uid in self._user_ids:
+            msg = msg.replace(uid, "[USER_ID]")
+
+        # Replace the args with the fully-formatted, redacted string so
+        # downstream handlers don't reapply % formatting.
+        record.msg = msg
+        record.args = None
+        return True
+
+
+def install_log_redactor() -> None:
+    """Attach SecretRedactor to every handler on the root logger.
+
+    Filters on handlers fire for propagated records too; filters on the
+    logger itself would only fire for records logged directly to root.
+    """
+    redactor = SecretRedactor(
+        user_ids=list(config.USER_ID_TO_NAME.keys()),
+    )
+    for handler in logging.getLogger().handlers:
+        handler.addFilter(redactor)
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -504,6 +576,9 @@ def main() -> None:
     if not config.USER_ID_TO_NAME:
         print("WARNING: No user IDs mapped. Set TOBIAS_TELEGRAM_USER_ID and "
               "CHLOE_TELEGRAM_USER_ID in .env.")
+
+    install_log_redactor()
+    logger.info("Log redaction filter installed")
 
     app = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))

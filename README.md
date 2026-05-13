@@ -1,7 +1,7 @@
 # Dinner Buddies
 
-> Demo video: [TO BE ADDED]
-> Repo: [TO BE ADDED]
+> Demo video: https://www.loom.com/share/89efffb77c00453897d560fb03eb46b1
+> Repo: https://github.com/tkromke/dinner-buddies
 
 An AI agent that orchestrates dinner plans between two people. Built as
 a take-home assignment for Stripe.
@@ -221,6 +221,10 @@ upfront.
 - Mood filter falls back to "no filter" if zero candidates match (logged),
   which is a deliberate "show something rather than nothing" choice.
 - All times are local (SGT). No timezone handling.
+- In takeout mode, Tobi currently meets Chloe at the MRT before heading 
+  to the takeout place. The original design had Tobi pick up food first 
+  for non-Sun-Plaza takeout, then meet at MRT. Current behavior is a 
+  simpler unified flow that works but loses the time optimization.
 
 
 [def]: demo_assets/dinner_plan_dine_in.png
