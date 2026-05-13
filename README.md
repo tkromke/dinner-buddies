@@ -57,7 +57,7 @@ code doesn't pretend to have taste.
 Requires Python 3.11+.
 
 ```bash
-git clone <repo>
+git clone https://github.com/tkromke/dinner-buddies.git
 cd dinner-buddies
 python3 -m venv venv
 source venv/bin/activate
